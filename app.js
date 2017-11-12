@@ -4,7 +4,7 @@
     window.location = 'https://login.mypurecloud.com/oauth/authorize' +
                 '?response_type=token' +
                 '&client_id=6b9f791c-86ef-4f7a-af85-3f3520dd0975' +
-                '&redirectUri=' + redirectUri;
+                '&redirect_uri=' + redirectUri;
   }
 
   const loginButton = document.getElementById('login');
