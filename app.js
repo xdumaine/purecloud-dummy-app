@@ -139,12 +139,15 @@
                         protocol: 'purecloud-client-apps',
                         conversationId: conversation.conversationId
                     }, 'https://apps.mypurecloud.com');
-
+                    return;
               }
           }
-      } else {
-          console.log('no conversation found matching by name');
       }
+      window.parent.postMessage({
+            action: 'showToast',
+            type: 'info',
+            title: 'Interaction not found', message: 'No matching interaction was found within the past 24 hours'
+        }, 'https://apps.mypurecloud.com');
   }
 
   fetchData();
