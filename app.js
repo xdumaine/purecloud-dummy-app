@@ -123,30 +123,66 @@
           body: JSON.stringify(query)
       });
       const result = await response.json();
-      if (result && result.conversations && result.conversations.length) {
-          for (let i = 0; i < result.conversations.length; i++) {
+
+      const findMatch = async function (id) {
+          let match;
+          let count = 0;
+          for (let i = result.conversations.length - 1; i > 0; i--) {
               const conversation = result.conversations[i];
               console.log('found conversation', conversation);
               const conversationdetails = await getConversation(conversation.conversationId);
               const customer = conversationdetails.participants.find(p => p.purpose === 'customer');
               const cCustomerId = customer.attributes['context.customerId'];
               const cVisitId = customer.attributes['context.customField1'];
-              if (customerId === cCustomerId || customerId === cVisitId ||
-                visitId === cCustomerId || visitId === cVisitId) {
-                    console.log('altocloud found match, posting command to parent window');
-                    window.parent.postMessage({
-                        action: 'showInteractionDetails',
-                        protocol: 'purecloud-client-apps',
-                        conversationId: conversation.conversationId
-                    }, 'https://apps.mypurecloud.com');
-                    return;
+              if (id === cCustomerId || id === cVisitId) {
+                  if (!match) {
+                      match = conversation.conversationId;
+                  }
+                  count++;
               }
+          }
+          return { match, count };
+      }
+      const sendMatch = function (id) {
+          window.parent.postMessage({
+              action: 'showInteractionDetails',
+              protocol: 'purecloud-client-apps',
+              conversationId: id
+          }, 'https://apps.mypurecloud.com');
+      }
+      if (result && result.conversations && result.conversations.length) {
+          let results = await findMatch(visitId);
+          if (results && results.match) {
+              sendMatch(results.match);
+              window.parent.postMessage({
+                    action: 'showToast',
+                    type: 'info',
+                    title: 'Visit located', message: 'Showing interaction associated with this visit.'
+                }, 'https://apps.mypurecloud.com');
+              return;
+          }
+          results = await findMatch(customerId);
+          if (results && results.match) {
+              sendMatch(results.match);
+              let message;
+              if (results.count === 1) {
+                  message = `No interaction found for this visit. Showing the most recent interaction for ${customerName}.`;
+              } else {
+                  message = `No interaction found for this visit. ${customerName} has contacted support ${results.count} times in the last 30 days. Showing the most recent interaction.`;
+              }
+              window.parent.postMessage({
+                    action: 'showToast',
+                    type: 'info',
+                    title: 'Customer located',
+                    message
+                }, 'https://apps.mypurecloud.com');
+              return;
           }
       }
       window.parent.postMessage({
             action: 'showToast',
             type: 'info',
-            title: 'Interaction not found', message: 'No matching interaction was found within the past 24 hours'
+            title: 'Interaction not found', message: 'No matching interaction was found for this visit or customer.'
         }, 'https://apps.mypurecloud.com');
   }
 
