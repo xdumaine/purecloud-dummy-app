@@ -127,7 +127,7 @@
       const findMatch = async function (id) {
           let match;
           let count = 0;
-          for (let i = result.conversations.length - 1; i > 0; i--) {
+          for (let i = result.conversations.length - 1; i >= 0; i--) {
               const conversation = result.conversations[i];
               console.log('found conversation', conversation);
               const conversationdetails = await getConversation(conversation.conversationId);
